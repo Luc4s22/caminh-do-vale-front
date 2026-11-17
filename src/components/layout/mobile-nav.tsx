@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useCanOperate } from "@/hooks/use-session";
+import { useCanRunTrips } from "@/hooks/use-session";
 import {
   LayoutDashboard,
   Activity,
@@ -40,7 +40,7 @@ const menuItems = [
 ];
 
 export function MobileNav({ alertCount = 0 }: MobileNavProps) {
-  const canOperate = useCanOperate();
+  const canOperate = useCanRunTrips();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 

@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "operator" | "viewer";
+export type UserRole = "admin" | "seller" | "buyer" | "driver" | "operator" | "viewer";
 
 export interface SessionUser {
   id: number;
@@ -11,6 +11,8 @@ export interface Session {
   access: string;
   refresh: string;
   user: SessionUser;
+  /** Logged in through the authenticator-code step (backend with 2FA). */
+  twoFactor?: boolean;
 }
 
 const STORAGE_KEY = "cdv.session";

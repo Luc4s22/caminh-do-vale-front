@@ -42,6 +42,7 @@ const LogisticsStatusSchema = z.enum([
   "loading",
   "in_transit",
   "stopped",
+  "awaiting_confirmation",
   "delivered",
   "cancelled",
 ]);

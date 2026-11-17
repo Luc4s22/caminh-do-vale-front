@@ -8,11 +8,12 @@ import { ShipmentCard } from "./components/shipment-card";
 
 const logisticsOptions: Array<{ value: LogisticsStatus | ""; label: string }> = [
   { value: "", label: "Todos os status" },
-  { value: "pending", label: "Aguardando" },
+  { value: "pending", label: "Planejada" },
   { value: "loading", label: "Carregando" },
   { value: "in_transit", label: "Em trânsito" },
   { value: "stopped", label: "Parado" },
-  { value: "delivered", label: "Entregue" },
+  { value: "awaiting_confirmation", label: "Aguardando confirmação" },
+  { value: "delivered", label: "Concluída" },
   { value: "cancelled", label: "Cancelado" },
 ];
 

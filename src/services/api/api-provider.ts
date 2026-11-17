@@ -46,6 +46,8 @@ const RANGE_MS: Partial<Record<TimeRange, number>> = {
 const logisticsByStatus: Record<ApiShipmentStatus, LogisticsStatus> = {
   planned: "pending",
   active: "in_transit",
+  // The backend's "delivered" means the driver arrived and the buyer still has to confirm.
+  delivered: "awaiting_confirmation",
   completed: "delivered",
   cancelled: "cancelled",
 };
@@ -340,9 +342,10 @@ export class ApiDataProvider implements DataService {
     this.invalidate();
   }
 
-  async finishShipment(id: string): Promise<void> {
-    await postData(`/shipments/${this.apiShipmentId(id)}/finish`);
+  async finishShipment(id: string): Promise<LogisticsStatus> {
+    const shipment = await postData<ApiShipment>(`/shipments/${this.apiShipmentId(id)}/finish`);
     this.invalidate();
+    return logisticsByStatus[shipment.status] ?? "delivered";
   }
 
   // The backend lifecycle is one-way (planned -> active -> completed), so "start again" means a new trip.

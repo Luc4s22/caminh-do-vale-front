@@ -190,6 +190,29 @@ describe("ApiDataProvider", () => {
     expect(init.method).toBe("POST");
   });
 
+  it.each([
+    ["delivered", "awaiting_confirmation"],
+    ["completed", "delivered"],
+  ] as const)("finishing a trip that becomes %s shows it as %s", async (backendStatus, frontStatus) => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ data: { ...shipment, status: backendStatus } }), { status: 200 }));
+    expect(await new ApiDataProvider().finishShipment("VG-2")).toBe(frontStatus);
+  });
+
+  it("lists trips awaiting the buyer's confirmation", async () => {
+    fetchMock.mockImplementation(async (input: string) => {
+      const path = new URL(input).pathname.replace("/api/v1", "").replace(/\/$/, "");
+      if (path === "/shipments") return new Response(JSON.stringify(page([{ ...shipment, status: "delivered" }])), { status: 200 });
+      return new Response(JSON.stringify(routes[path] ?? { detail: "x" }), { status: routes[path] ? 200 : 404 });
+    });
+    const [s] = await new ApiDataProvider().getShipments();
+    expect(s.logisticsStatus).toBe("awaiting_confirmation");
+  });
+
+  it("treats a trip the user cannot see (404) as not found", async () => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ detail: "Não encontrado." }), { status: 404 }));
+    expect(await new ApiDataProvider().getShipmentById("VG-99")).toBeNull();
+  });
+
   it("repeats a trip as a new planned shipment with the same route, vehicle, board and cargo", async () => {
     const posted: { path: string; body: unknown }[] = [];
     fetchMock.mockImplementation(async (input: string, init?: RequestInit) => {

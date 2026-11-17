@@ -7,11 +7,12 @@ import type {
 } from "@/types";
 
 const logisticsLabels: Record<LogisticsStatus, string> = {
-  pending: "Aguardando",
+  pending: "Planejada",
   loading: "Carregando",
   in_transit: "Em trânsito",
   stopped: "Parado",
-  delivered: "Entregue",
+  awaiting_confirmation: "Aguardando confirmação",
+  delivered: "Concluída",
   cancelled: "Cancelado",
 };
 
@@ -60,6 +61,7 @@ export function getLogisticsBadgeVariant(status: LogisticsStatus): string {
     loading: "info",
     in_transit: "info",
     stopped: "warning",
+    awaiting_confirmation: "warning",
     delivered: "success",
     cancelled: "muted",
   };

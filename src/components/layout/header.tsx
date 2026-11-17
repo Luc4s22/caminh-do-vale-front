@@ -19,6 +19,7 @@ import { InstallAppButton } from "./install-app-button";
 import type { AppNotification } from "@/types";
 import { logout, useSession } from "@/hooks/use-session";
 import type { UserRole } from "@/services/api/session";
+import { RegenerateRecoveryCodesDialog } from "@/features/auth/two-factor";
 
 interface HeaderProps {
   title: string;
@@ -38,6 +39,9 @@ const notificationIcon: Record<string, typeof AlertTriangle> = {
 
 const roleLabels: Record<UserRole, string> = {
   admin: "Administrador",
+  seller: "Vendedor",
+  buyer: "Comprador",
+  driver: "Motorista",
   operator: "Operador",
   viewer: "Visualizador",
 };
@@ -66,6 +70,7 @@ export function Header({
   const [searchQuery, setSearchQuery] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
@@ -275,6 +280,17 @@ export function Header({
                 </div>
                 {session && (
                   <div className="py-1">
+                    {session.twoFactor && (
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          setRecoveryOpen(true);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-[#5B7264] hover:bg-[#F4FAF5] hover:text-[#123A24] transition-colors"
+                      >
+                        Gerar novos códigos de recuperação
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
@@ -292,6 +308,7 @@ export function Header({
           </div>
         </div>
       </div>
+      {recoveryOpen && <RegenerateRecoveryCodesDialog onClose={() => setRecoveryOpen(false)} />}
     </header>
   );
 }

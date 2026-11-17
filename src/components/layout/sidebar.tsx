@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useCanOperate } from "@/hooks/use-session";
+import { useCanRunTrips } from "@/hooks/use-session";
 import {
   LayoutDashboard,
   Activity,
@@ -37,7 +37,7 @@ const navItems = [
 ];
 
 export function Sidebar({ collapsed, onToggle, alertCount = 0 }: SidebarProps) {
-  const canOperate = useCanOperate();
+  const canOperate = useCanRunTrips();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 

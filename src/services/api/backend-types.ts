@@ -6,13 +6,34 @@ export interface ApiUser {
   id: number;
   name: string;
   email: string;
-  role: "admin" | "operator" | "viewer" | null;
+  role: "admin" | "seller" | "buyer" | "driver" | "operator" | "viewer" | null;
 }
 
-export interface ApiLoginResponse {
+export interface ApiTokens {
   access: string;
   refresh: string;
   user: ApiUser;
+}
+
+/** POST /auth/login on the 2FA backend: the password only unlocks the code step. */
+export interface ApiMfaChallenge {
+  mfa_required: true;
+  mfa_setup_required: boolean;
+  mfa_token: string;
+  expires_in: number;
+}
+
+/** The current production API still answers the login with tokens; the 2FA branch answers with a challenge. */
+export type ApiLoginResponse = ApiTokens | ApiMfaChallenge;
+
+export interface ApiMfaSetup {
+  qr_code: string;
+  secret: string;
+  otpauth_uri: string;
+}
+
+export interface ApiMfaActivation extends ApiTokens {
+  recovery_codes: string[];
 }
 
 export interface ApiLocation {
@@ -75,7 +96,7 @@ export interface ApiShipmentItem {
   quantity_kg: Decimal;
 }
 
-export type ApiShipmentStatus = "planned" | "active" | "completed" | "cancelled";
+export type ApiShipmentStatus = "planned" | "active" | "delivered" | "completed" | "cancelled";
 
 export interface ApiShipment {
   id: number;

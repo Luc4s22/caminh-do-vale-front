@@ -1,11 +1,12 @@
 import type { LogisticsStatus, EnvironmentalStatus, AlertType } from '@/types';
 
 export const logisticsStatusLabels: Record<LogisticsStatus, string> = {
-  pending: 'Aguardando',
+  pending: 'Planejada',
   loading: 'Carregando',
   in_transit: 'Em trânsito',
   stopped: 'Parado',
-  delivered: 'Entregue',
+  awaiting_confirmation: 'Aguardando confirmação',
+  delivered: 'Concluída',
   cancelled: 'Cancelado',
 };
 
@@ -30,6 +31,7 @@ export const logisticsBadgeVariant: Record<LogisticsStatus, string> = {
   loading: 'info',
   in_transit: 'info',
   stopped: 'warning',
+  awaiting_confirmation: 'warning',
   delivered: 'success',
   cancelled: 'muted',
 };

@@ -3,6 +3,7 @@ export type LogisticsStatus =
   | "loading"
   | "in_transit"
   | "stopped"
+  | "awaiting_confirmation"
   | "delivered"
   | "cancelled";
 

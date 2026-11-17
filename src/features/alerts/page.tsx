@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Card, Badge, Button, Input, Select, Skeleton, EmptyState, Tabs } from "@/components/ui";
 import { useAlerts, useAcknowledgeAlert, useResolveAlert, useShipments } from "@/hooks/use-data-service";
-import { useCanOperate } from "@/hooks/use-session";
+import { useCanHandleAlerts } from "@/hooks/use-session";
 import { formatAlertType, formatRelativeTime, formatDateTime } from "@/utils/format";
 import type { MonitoringAlert, AlertType } from "@/types";
 
@@ -217,7 +217,7 @@ export default function AlertsPage() {
   const { data: shipments } = useShipments();
   const acknowledgeMutation = useAcknowledgeAlert();
   const resolveMutation = useResolveAlert();
-  const canOperate = useCanOperate();
+  const canOperate = useCanHandleAlerts();
   const [actionError, setActionError] = useState<{ id: string; message: string } | null>(null);
 
   const runAction = (mutation: typeof acknowledgeMutation, id: string) => {

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Play, Flag, Truck, MapPin, Package, Building2, Loader2, Lock, CheckCircle2, X, RotateCcw } from "lucide-react";
 import { Card, Badge, Button, Skeleton, EmptyState } from "@/components/ui";
 import { useFinishShipment, useRepeatShipment, useShipments, useStartShipment } from "@/hooks/use-data-service";
-import { useCanOperate } from "@/hooks/use-session";
+import { useCanPlanTrips, useCanRunTrips } from "@/hooks/use-session";
 import { formatDateTime } from "@/utils/format";
 import { DeviceStatus } from "@/features/shipments/components/device-status";
 import type { Shipment } from "@/types";
@@ -20,7 +20,7 @@ const actionText: Record<ActionKind, { title: string; confirm: string; body: str
   finish: {
     title: "Finalizar viagem",
     confirm: "Finalizar agora",
-    body: "A viagem será encerrada e passará para o histórico, com todas as leituras dela.",
+    body: "A viagem será encerrada e o comprador poderá confirmar o recebimento. Todas as leituras ficam no histórico.",
   },
   restart: {
     title: "Iniciar de novo",
@@ -29,7 +29,7 @@ const actionText: Record<ActionKind, { title: string; confirm: string; body: str
   },
 };
 
-function TripRow({ shipment, action, onAction }: { shipment: Shipment; action: ActionKind; onAction: () => void }) {
+function TripRow({ shipment, action, onAction }: { shipment: Shipment; action?: ActionKind; onAction?: () => void }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[#E6F4EA] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 space-y-1">
@@ -103,7 +103,8 @@ function Section({ title, count, children }: { title: string; count: number; chi
 }
 
 export default function TripsPage() {
-  const canOperate = useCanOperate();
+  const canRun = useCanRunTrips();
+  const canPlan = useCanPlanTrips();
   const navigate = useNavigate();
   const { data: shipments, isLoading } = useShipments();
   const start = useStartShipment();
@@ -115,23 +116,24 @@ export default function TripsPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  if (!canOperate) {
+  if (!canRun) {
     return (
       <EmptyState
         icon={Lock}
         title="Sem permissão"
-        description="Só operadores e administradores podem iniciar e finalizar viagens."
+        description="Só vendedores, motoristas, operadores e administradores podem iniciar e finalizar viagens."
       />
     );
   }
 
   const planned = shipments?.filter((s) => s.logisticsStatus === "pending") ?? [];
   const active = shipments?.filter((s) => s.logisticsStatus === "in_transit") ?? [];
+  const awaiting = shipments?.filter((s) => s.logisticsStatus === "awaiting_confirmation") ?? [];
   const completed = shipments?.filter((s) => s.logisticsStatus === "delivered").slice(0, 5) ?? [];
 
   function open(kind: ActionKind, shipment: Shipment) {
     setError(null);
-    setKeepAvailable(true);
+    setKeepAvailable(canPlan);
     setPending({ kind, shipment });
   }
 
@@ -152,12 +154,16 @@ export default function TripsPage() {
         navigate(`/cargas/${newId}`);
         return;
       }
-      await finish.mutateAsync(shipment.id);
+      const status = await finish.mutateAsync(shipment.id);
+      const finished =
+        status === "awaiting_confirmation"
+          ? `${shipment.id} entregue. Agora falta o comprador confirmar o recebimento.`
+          : `${shipment.id} finalizada com sucesso.`;
       if (keepAvailable) {
         const newId = await repeat.mutateAsync(shipment.id);
-        setDone(`${shipment.id} finalizada. A viagem ${newId}, igual a ela, já está em Planejadas para iniciar de novo.`);
+        setDone(`${finished} A viagem ${newId}, igual a ela, já está em Planejadas para iniciar de novo.`);
       } else {
-        setDone(`${shipment.id} finalizada com sucesso.`);
+        setDone(finished);
       }
       setPending(null);
     } catch (err) {
@@ -197,7 +203,7 @@ export default function TripsPage() {
           <Section title="Planejadas" count={planned.length}>
             {planned.length === 0 ? (
               <p className="text-sm text-[#5B7264]">
-                Nenhuma viagem esperando para começar. Use "Iniciar de novo" numa viagem concluída.
+                Nenhuma viagem esperando para começar.{canPlan && ' Use "Iniciar de novo" numa viagem concluída.'}
               </p>
             ) : (
               planned.map((s) => <TripRow key={s.id} shipment={s} action="start" onAction={() => open("start", s)} />)
@@ -212,10 +218,23 @@ export default function TripsPage() {
             )}
           </Section>
 
+          {awaiting.length > 0 && (
+            <Section title="Aguardando confirmação do comprador" count={awaiting.length}>
+              {awaiting.map((s) => (
+                <TripRow key={s.id} shipment={s} />
+              ))}
+            </Section>
+          )}
+
           {completed.length > 0 && (
             <Section title="Concluídas recentemente" count={completed.length}>
               {completed.map((s) => (
-                <TripRow key={s.id} shipment={s} action="restart" onAction={() => open("restart", s)} />
+                <TripRow
+                  key={s.id}
+                  shipment={s}
+                  action={canPlan ? "restart" : undefined}
+                  onAction={() => open("restart", s)}
+                />
               ))}
             </Section>
           )}
@@ -239,7 +258,7 @@ export default function TripsPage() {
             </p>
             <p className="mt-3 text-sm text-[#123A24]">{actionText[pending.kind].body}</p>
 
-            {pending.kind === "finish" && (
+            {pending.kind === "finish" && canPlan && (
               <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg bg-[#F4FAF5] px-3 py-2 text-sm text-[#123A24]">
                 <input
                   type="checkbox"

@@ -83,7 +83,7 @@ const AFFECTED_BY_ACTIONS = [
   'latest-reading',
 ];
 
-function useServiceAction(action: (id: string) => Promise<void>) {
+function useServiceAction<T>(action: (id: string) => Promise<T>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: action,

@@ -25,7 +25,8 @@ import {
   useAlerts,
   useResolveAlert,
 } from "@/hooks/use-data-service";
-import { useCanOperate } from "@/hooks/use-session";
+import { useCanHandleAlerts } from "@/hooks/use-session";
+import { ApiError } from "@/services/api/http";
 import { DeviceStatus, boardIsSilent } from "./components/device-status";
 import { useSimulatedRoutes } from "@/hooks/use-simulated-routes";
 import { Button } from "@/components/ui";
@@ -123,7 +124,7 @@ function InfoItem({
 function AlertRow({ alert }: { alert: MonitoringAlert }) {
   const isActive = alert.status === "active";
   const isCritical = alert.severity === "critical";
-  const canOperate = useCanOperate();
+  const canOperate = useCanHandleAlerts();
   const resolve = useResolveAlert();
 
   return (
@@ -264,7 +265,7 @@ export default function ShipmentDetailPage() {
   // "custom" = every reading of the trip, so finished trips opened from the history show their data.
   const [timeRange, setTimeRange] = useState<TimeRange>("custom");
 
-  const { data: shipment, isLoading: shipmentLoading } = useShipment(id ?? "");
+  const { data: shipment, isLoading: shipmentLoading, error: shipmentError } = useShipment(id ?? "");
   const { data: readings, isLoading: readingsLoading } = useReadingHistory(
     id ?? "",
     timeRange
@@ -360,15 +361,18 @@ export default function ShipmentDetailPage() {
   }
 
   if (!shipment) {
+    // The backend answers 404 both for a missing trip and for one the user cannot see,
+    // so the message must not reveal which case it is.
+    const status = shipmentError instanceof ApiError ? shipmentError.status : null;
+    const [title, message] =
+      !shipmentError || status === 404
+        ? ["Viagem não encontrada", `A viagem "${id}" não existe ou você não tem acesso a ela.`]
+        : [status === 403 ? "Sem permissão" : "Não foi possível abrir a viagem", shipmentError.message];
     return (
-      <div className="flex flex-col items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-20 text-center">
         <XCircle className="h-12 w-12 text-[#D94F4F]" />
-        <h2 className="mt-4 text-lg font-semibold text-[#123A24]">
-          Carga não encontrada
-        </h2>
-        <p className="mt-1 text-sm text-[#5B7264]">
-          A carga "{id}" não existe ou foi removida.
-        </p>
+        <h2 className="mt-4 text-lg font-semibold text-[#123A24]">{title}</h2>
+        <p className="mt-1 max-w-md text-sm text-[#5B7264]">{message}</p>
         <Link
           to="/cargas"
           className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[#1A7A44] hover:underline"
