@@ -105,6 +105,9 @@ export interface ApiShipment {
   vehicle: number;
   device: number;
   created_by: number | null;
+  /** Only on the backend with roles (seguranca/fases234). */
+  buyer?: number | null;
+  driver?: number | null;
   status: ApiShipmentStatus;
   started_at: string;
   ended_at: string | null;

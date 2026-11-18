@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useCanRunTrips } from "@/hooks/use-session";
+import { useNavFilter, type NavAudience } from "@/hooks/use-session";
 import {
   LayoutDashboard,
   Activity,
@@ -12,6 +12,7 @@ import {
   Settings,
   Building2,
   Route,
+  Truck,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -24,11 +25,12 @@ interface SidebarProps {
   alertCount?: number;
 }
 
-const navItems = [
+const navItems: { icon: typeof Route; label: string; path: string; badge?: boolean; only?: NavAudience }[] = [
   { icon: LayoutDashboard, label: "Visão Geral", path: "/" },
   { icon: Activity, label: "Monitoramento", path: "/monitoramento" },
   { icon: Package, label: "Cargas e Lotes", path: "/cargas" },
-  { icon: Route, label: "Viagens", path: "/viagens", operatorOnly: true },
+  { icon: Truck, label: "Minha viagem", path: "/minha-viagem", only: "driver" },
+  { icon: Route, label: "Viagens", path: "/viagens", only: "trips" },
   { icon: MapPin, label: "Mapa de Transportes", path: "/mapa" },
   { icon: Bell, label: "Alertas", path: "/alertas", badge: true },
   { icon: FileText, label: "Histórico e Relatórios", path: "/relatorios" },
@@ -37,7 +39,7 @@ const navItems = [
 ];
 
 export function Sidebar({ collapsed, onToggle, alertCount = 0 }: SidebarProps) {
-  const canOperate = useCanRunTrips();
+  const visible = useNavFilter();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
@@ -89,7 +91,7 @@ export function Sidebar({ collapsed, onToggle, alertCount = 0 }: SidebarProps) {
       {/* Navigation */}
       <nav className="relative flex-1 py-3 px-2 overflow-y-auto" role="navigation" aria-label="Menu principal">
         <ul className="space-y-0.5">
-          {navItems.filter((item) => canOperate || !("operatorOnly" in item)).map((item) => {
+          {navItems.filter(visible).map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;
 

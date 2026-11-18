@@ -20,6 +20,33 @@ const has = (role: UserRole | null, allowed: UserRole[]) => role !== null && all
 
 // The backend enforces every rule below; these only decide which menus and buttons to show.
 
+/** Opens the Viagens page: everyone who takes part in trips. */
+export function useCanSeeTrips(): boolean {
+  return has(useRole(), ["admin", "operator", "seller", "driver", "buyer"]);
+}
+
+/** Confirm receipt of a delivered trip (the buyer of that trip; the backend checks). */
+export function useCanConfirmDelivery(): boolean {
+  return has(useRole(), ["admin", "buyer"]);
+}
+
+export function useIsDriver(): boolean {
+  return useRole() === "driver";
+}
+
+/** Who a menu item is for; items without `only` are for everyone. */
+export type NavAudience = "trips" | "driver" | "notDriver";
+
+export function useNavFilter(): (item: { only?: NavAudience }) => boolean {
+  const role = useRole();
+  const allowed: Record<NavAudience, boolean> = {
+    trips: has(role, ["admin", "operator", "seller", "driver", "buyer"]),
+    driver: role === "driver",
+    notDriver: role !== "driver",
+  };
+  return (item) => !item.only || allowed[item.only];
+}
+
 /** Start and finish trips (the driver only their own; the backend checks). */
 export function useCanRunTrips(): boolean {
   return has(useRole(), ["admin", "operator", "seller", "driver"]);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useCanRunTrips } from "@/hooks/use-session";
+import { useNavFilter, type NavAudience } from "@/hooks/use-session";
 import {
   LayoutDashboard,
   Activity,
@@ -14,24 +14,29 @@ import {
   Settings,
   Building2,
   Route,
+  Truck,
 } from "lucide-react";
 
 interface MobileNavProps {
   alertCount?: number;
 }
 
-const mainItems = [
+type NavItem = { icon: typeof Menu; label: string; path: string; badge?: boolean; only?: NavAudience };
+
+const mainItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Início", path: "/" },
-  { icon: Activity, label: "Monitor", path: "/monitoramento" },
+  { icon: Truck, label: "Minha viagem", path: "/minha-viagem", only: "driver" },
+  { icon: Activity, label: "Monitor", path: "/monitoramento", only: "notDriver" },
   { icon: MapPin, label: "Mapa", path: "/mapa" },
   { icon: Bell, label: "Alertas", path: "/alertas", badge: true },
 ];
 
-const menuItems = [
+const menuItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Visão Geral", path: "/" },
   { icon: Activity, label: "Monitoramento", path: "/monitoramento" },
   { icon: Package, label: "Cargas e Lotes", path: "/cargas" },
-  { icon: Route, label: "Viagens", path: "/viagens", operatorOnly: true },
+  { icon: Truck, label: "Minha viagem", path: "/minha-viagem", only: "driver" },
+  { icon: Route, label: "Viagens", path: "/viagens", only: "trips" },
   { icon: MapPin, label: "Mapa de Transportes", path: "/mapa" },
   { icon: Bell, label: "Alertas", path: "/alertas" },
   { icon: FileText, label: "Histórico e Relatórios", path: "/relatorios" },
@@ -40,7 +45,7 @@ const menuItems = [
 ];
 
 export function MobileNav({ alertCount = 0 }: MobileNavProps) {
-  const canOperate = useCanRunTrips();
+  const visible = useNavFilter();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -86,7 +91,7 @@ export function MobileNav({ alertCount = 0 }: MobileNavProps) {
 
           {/* Menu items */}
           <nav className="py-2 px-3">
-            {menuItems.filter((item) => canOperate || !("operatorOnly" in item)).map((item) => {
+            {menuItems.filter(visible).map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
               return (
@@ -120,7 +125,7 @@ export function MobileNav({ alertCount = 0 }: MobileNavProps) {
         aria-label="Navegação móvel"
       >
         <div className="flex items-stretch justify-around h-14 max-w-lg mx-auto">
-          {mainItems.map((item) => {
+          {mainItems.filter(visible).map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
             return (

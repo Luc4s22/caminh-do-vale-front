@@ -4,6 +4,10 @@ import type {
   AlertType,
   AppNotification,
   DashboardSummary,
+  DeliveryConfirmation,
+  NewTrip,
+  TripFormOptions,
+  TripOption,
   EnvironmentalStatus,
   FruitStorageProfile,
   GeoPosition,
@@ -15,7 +19,7 @@ import type {
   TimeRange,
 } from "@/types";
 import { formatAlertType } from "@/utils/format";
-import { ApiError, getAllPages, getData, postData } from "./http";
+import { ApiError, getAllPages, getData, postData, postForm } from "./http";
 import { getSession, subscribeSession } from "./session";
 import { companyForPlate } from "@/config/companies";
 import type {
@@ -28,6 +32,7 @@ import type {
   ApiShipment,
   ApiShipmentStatus,
   ApiShipmentSummary,
+  ApiUser,
   ApiVehicle,
 } from "./backend-types";
 
@@ -217,6 +222,8 @@ export class ApiDataProvider implements DataService {
       startedAt: api.status === "planned" ? undefined : api.started_at,
       completedAt: api.ended_at ?? undefined,
       createdAt: api.created_at,
+      buyerId: api.buyer ?? undefined,
+      driverId: api.driver ?? undefined,
     };
   }
 
@@ -367,6 +374,8 @@ export class ApiDataProvider implements DataService {
       destination: original.destination,
       vehicle: original.vehicle,
       device: original.device,
+      ...(original.buyer ? { buyer: original.buyer } : {}),
+      ...(original.driver ? { driver: original.driver } : {}),
       started_at: new Date().toISOString(),
     });
     for (const item of original.items) {
@@ -379,6 +388,69 @@ export class ApiDataProvider implements DataService {
     }
     this.invalidate();
     return toShipmentId(created.id);
+  }
+
+  async getTripFormOptions(): Promise<TripFormOptions> {
+    const [lookups, fruits] = await Promise.all([this.getLookups(), getAllPages<ApiFruit>("/fruits?page_size=500")]);
+    const active = <T extends { is_active: boolean }>(m: Map<number, T>) => [...m.values()].filter((x) => x.is_active);
+    return {
+      locations: active(lookups.locations).map((l) => ({ id: l.id, label: l.name, detail: l.address || undefined })),
+      vehicles: active(lookups.vehicles).map((v) => ({ id: v.id, label: v.plate, detail: v.model || undefined })),
+      devices: active(lookups.devices).map((d) => ({ id: d.id, label: d.uid, detail: d.name || undefined })),
+      fruits: fruits.filter((f) => f.is_active).map((f) => ({ id: f.id, label: f.name })),
+    };
+  }
+
+  async getPeople(role: "buyer" | "driver"): Promise<TripOption[] | null> {
+    try {
+      const users = await getData<ApiUser[]>(`/auth/users?role=${role}&page_size=500`);
+      return users.map((u) => ({ id: u.id, label: u.name || u.email, detail: u.name ? u.email : undefined }));
+    } catch (error) {
+      // The backend team still has to add this route; until then the form asks for the id.
+      if (error instanceof ApiError && (error.status === 404 || error.status === 405)) return null;
+      throw error;
+    }
+  }
+
+  async createShipment(trip: NewTrip): Promise<string> {
+    const created = await postData<ApiShipment>("/shipments", {
+      origin: trip.origin,
+      destination: trip.destination,
+      vehicle: trip.vehicle,
+      device: trip.device,
+      ...(trip.buyer ? { buyer: trip.buyer } : {}),
+      ...(trip.driver ? { driver: trip.driver } : {}),
+      started_at: trip.startsAt,
+      // Sent together so the backend creates the trip and its cargo in one transaction.
+      items: trip.items.map((i) => ({ fruit: i.fruit, lot: i.lot, quantity_kg: i.quantityKg.toFixed(2) })),
+    });
+    this.invalidate();
+    return toShipmentId(created.id);
+  }
+
+  async confirmDelivery(id: string, { condition, notes, photos }: DeliveryConfirmation): Promise<void> {
+    const form = new FormData();
+    form.append("condition", condition);
+    if (notes.trim()) form.append("notes", notes.trim());
+    for (const photo of photos) form.append("photos", photo, photo.name);
+    await postForm(`/shipments/${this.apiShipmentId(id)}/confirm`, form);
+    this.invalidate();
+  }
+
+  async getMyTrips(): Promise<Shipment[]> {
+    let trips: ApiShipment[];
+    try {
+      trips = await getData<ApiShipment[]>("/shipments/current");
+    } catch (error) {
+      // Backend without roles: there is no "my trip" yet.
+      if (error instanceof ApiError && error.status === 404) return [];
+      throw error;
+    }
+    const [summaries, lookups] = await Promise.all([
+      Promise.all(trips.map((s) => getData<ApiShipmentSummary>(`/shipments/${s.id}/summary`))),
+      this.getLookups(),
+    ]);
+    return trips.map((s, i) => this.mapShipment(s, summaries[i], lookups));
   }
 
   private apiShipmentId(id: string): number {

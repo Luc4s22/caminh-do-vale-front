@@ -81,6 +81,41 @@ export interface Shipment {
   startedAt?: string;
   completedAt?: string;
   createdAt: string;
+  /** Backend user ids of the people on the trip (backend with roles only). */
+  buyerId?: number;
+  driverId?: number;
+}
+
+export type DeliveryCondition = "good" | "damaged" | "critical";
+
+export interface DeliveryConfirmation {
+  condition: DeliveryCondition;
+  notes: string;
+  photos: File[];
+}
+
+export interface TripOption {
+  id: number;
+  label: string;
+  detail?: string;
+}
+
+export interface TripFormOptions {
+  locations: TripOption[];
+  vehicles: TripOption[];
+  devices: TripOption[];
+  fruits: TripOption[];
+}
+
+export interface NewTrip {
+  origin: number;
+  destination: number;
+  vehicle: number;
+  device: number;
+  buyer?: number;
+  driver?: number;
+  startsAt: string;
+  items: { fruit: number; lot: string; quantityKg: number }[];
 }
 
 export interface MonitoringAlert {

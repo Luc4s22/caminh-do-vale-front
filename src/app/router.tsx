@@ -22,6 +22,7 @@ const Reports = lazy(() => import('@/features/reports/page'));
 const Settings = lazy(() => import('@/features/settings/page'));
 const Companies = lazy(() => import('@/features/companies/page'));
 const Trips = lazy(() => import('@/features/trips/page'));
+const MyTrip = lazy(() => import('@/features/trips/my-trip-page'));
 
 function PageLoader() {
   return (
@@ -123,6 +124,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PageLoader />}>
               <Trips />
+            </Suspense>
+          }
+        />
+        <Route
+          path="minha-viagem"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <MyTrip />
             </Suspense>
           }
         />

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Play, Flag, Truck, MapPin, Package, Building2, Loader2, Lock, CheckCircle2, X, RotateCcw } from "lucide-react";
+import { Play, Flag, Truck, MapPin, Package, Building2, Loader2, Lock, CheckCircle2, X, RotateCcw, Plus, PackageCheck } from "lucide-react";
 import { Card, Badge, Button, Skeleton, EmptyState } from "@/components/ui";
 import { useFinishShipment, useRepeatShipment, useShipments, useStartShipment } from "@/hooks/use-data-service";
-import { useCanPlanTrips, useCanRunTrips } from "@/hooks/use-session";
+import { useCanConfirmDelivery, useCanPlanTrips, useCanRunTrips, useCanSeeTrips } from "@/hooks/use-session";
 import { formatDateTime } from "@/utils/format";
 import { DeviceStatus } from "@/features/shipments/components/device-status";
 import type { Shipment } from "@/types";
+import { ConfirmDeliveryDialog } from "./confirm-delivery";
+import { NewTripDialog } from "./new-trip-dialog";
 
 type ActionKind = "start" | "finish" | "restart";
 type Action = { kind: ActionKind; shipment: Shipment };
@@ -29,7 +31,9 @@ const actionText: Record<ActionKind, { title: string; confirm: string; body: str
   },
 };
 
-function TripRow({ shipment, action, onAction }: { shipment: Shipment; action?: ActionKind; onAction?: () => void }) {
+type RowAction = ActionKind | "confirm";
+
+function TripRow({ shipment, action, onAction }: { shipment: Shipment; action?: RowAction; onAction?: () => void }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[#E6F4EA] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 space-y-1">
@@ -80,6 +84,12 @@ function TripRow({ shipment, action, onAction }: { shipment: Shipment; action?: 
           Finalizar viagem
         </Button>
       )}
+      {action === "confirm" && (
+        <Button onClick={onAction} className="shrink-0">
+          <PackageCheck className="h-4 w-4" />
+          Confirmar recebimento
+        </Button>
+      )}
       {action === "restart" && (
         <Button variant="secondary" onClick={onAction} className="shrink-0">
           <RotateCcw className="h-4 w-4" />
@@ -103,8 +113,12 @@ function Section({ title, count, children }: { title: string; count: number; chi
 }
 
 export default function TripsPage() {
+  const canSee = useCanSeeTrips();
   const canRun = useCanRunTrips();
   const canPlan = useCanPlanTrips();
+  const canConfirm = useCanConfirmDelivery();
+  const [creating, setCreating] = useState(false);
+  const [confirming, setConfirming] = useState<Shipment | null>(null);
   const navigate = useNavigate();
   const { data: shipments, isLoading } = useShipments();
   const start = useStartShipment();
@@ -116,12 +130,12 @@ export default function TripsPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  if (!canRun) {
+  if (!canSee) {
     return (
       <EmptyState
         icon={Lock}
         title="Sem permissão"
-        description="Só vendedores, motoristas, operadores e administradores podem iniciar e finalizar viagens."
+        description="Só vendedores, compradores, motoristas, operadores e administradores acompanham as viagens."
       />
     );
   }
@@ -175,9 +189,21 @@ export default function TripsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#123A24]">Viagens</h1>
-        <p className="mt-1 text-sm text-[#5B7264]">Inicie as viagens planejadas e finalize as que chegaram ao destino</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#123A24]">Viagens</h1>
+          <p className="mt-1 text-sm text-[#5B7264]">
+            {canRun
+              ? "Inicie as viagens planejadas e finalize as que chegaram ao destino"
+              : "Acompanhe suas cargas e confirme o recebimento quando chegarem"}
+          </p>
+        </div>
+        {canPlan && (
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="h-4 w-4" />
+            Nova viagem
+          </Button>
+        )}
       </div>
 
       {done && (
@@ -203,10 +229,12 @@ export default function TripsPage() {
           <Section title="Planejadas" count={planned.length}>
             {planned.length === 0 ? (
               <p className="text-sm text-[#5B7264]">
-                Nenhuma viagem esperando para começar.{canPlan && ' Use "Iniciar de novo" numa viagem concluída.'}
+                Nenhuma viagem esperando para começar.{canPlan && ' Crie uma em "Nova viagem" ou use "Iniciar de novo" numa concluída.'}
               </p>
             ) : (
-              planned.map((s) => <TripRow key={s.id} shipment={s} action="start" onAction={() => open("start", s)} />)
+              planned.map((s) => (
+                <TripRow key={s.id} shipment={s} action={canRun ? "start" : undefined} onAction={() => open("start", s)} />
+              ))
             )}
           </Section>
 
@@ -214,14 +242,21 @@ export default function TripsPage() {
             {active.length === 0 ? (
               <p className="text-sm text-[#5B7264]">Nenhuma viagem em andamento.</p>
             ) : (
-              active.map((s) => <TripRow key={s.id} shipment={s} action="finish" onAction={() => open("finish", s)} />)
+              active.map((s) => (
+                <TripRow key={s.id} shipment={s} action={canRun ? "finish" : undefined} onAction={() => open("finish", s)} />
+              ))
             )}
           </Section>
 
           {awaiting.length > 0 && (
             <Section title="Aguardando confirmação do comprador" count={awaiting.length}>
               {awaiting.map((s) => (
-                <TripRow key={s.id} shipment={s} />
+                <TripRow
+                  key={s.id}
+                  shipment={s}
+                  action={canConfirm ? "confirm" : undefined}
+                  onAction={() => setConfirming(s)}
+                />
               ))}
             </Section>
           )}
@@ -239,6 +274,24 @@ export default function TripsPage() {
             </Section>
           )}
         </>
+      )}
+
+      {creating && (
+        <NewTripDialog
+          onClose={() => setCreating(false)}
+          onCreated={(id) => {
+            setCreating(false);
+            setDone(`Viagem ${id} criada. Ela já aparece em Planejadas.`);
+          }}
+        />
+      )}
+
+      {confirming && (
+        <ConfirmDeliveryDialog
+          shipment={confirming}
+          onClose={() => setConfirming(null)}
+          onDone={() => setDone(`Recebimento de ${confirming.id} confirmado. A viagem foi concluída.`)}
+        />
       )}
 
       {pending && (

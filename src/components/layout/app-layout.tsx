@@ -13,6 +13,7 @@ const pageTitles: Record<string, string> = {
   "/monitoramento": "Monitoramento",
   "/cargas": "Cargas e Lotes",
   "/viagens": "Viagens",
+  "/minha-viagem": "Minha viagem",
   "/mapa": "Mapa de Transportes",
   "/alertas": "Alertas",
   "/relatorios": "Histórico e Relatórios",

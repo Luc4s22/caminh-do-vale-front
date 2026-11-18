@@ -4,6 +4,8 @@ import type {
   ShipmentFilters,
   AlertFilters,
   TimeRange,
+  NewTrip,
+  DeliveryConfirmation,
 } from '@/types';
 import type { DataService } from '@/services/api/data-service';
 
@@ -81,6 +83,7 @@ const AFFECTED_BY_ACTIONS = [
   'shipments',
   'shipment',
   'latest-reading',
+  'my-trips',
 ];
 
 function useServiceAction<T>(action: (id: string) => Promise<T>) {
@@ -116,6 +119,51 @@ export function useRepeatShipment() {
     onSuccess: () => {
       for (const key of AFFECTED_BY_ACTIONS) queryClient.invalidateQueries({ queryKey: [key] });
     },
+  });
+}
+
+export function useTripFormOptions() {
+  return useQuery({
+    queryKey: ['trip-form-options'],
+    queryFn: () => service.getTripFormOptions(),
+    staleTime: 60_000,
+  });
+}
+
+export function usePeople(role: 'buyer' | 'driver') {
+  return useQuery({
+    queryKey: ['people', role],
+    queryFn: () => service.getPeople(role),
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateShipment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (trip: NewTrip) => service.createShipment(trip),
+    onSuccess: () => {
+      for (const key of AFFECTED_BY_ACTIONS) queryClient.invalidateQueries({ queryKey: [key] });
+    },
+  });
+}
+
+export function useConfirmDelivery() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, confirmation }: { id: string; confirmation: DeliveryConfirmation }) =>
+      service.confirmDelivery(id, confirmation),
+    onSuccess: () => {
+      for (const key of [...AFFECTED_BY_ACTIONS, 'my-trips']) queryClient.invalidateQueries({ queryKey: [key] });
+    },
+  });
+}
+
+export function useMyTrips() {
+  return useQuery({
+    queryKey: ['my-trips'],
+    queryFn: () => service.getMyTrips(),
+    refetchInterval: LIVE_REFRESH_MS,
   });
 }
 

@@ -208,6 +208,56 @@ describe("ApiDataProvider", () => {
     expect(s.logisticsStatus).toBe("awaiting_confirmation");
   });
 
+  it("creates a trip with buyer, driver and cargo in one request", async () => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ data: { ...shipment, id: 12, status: "planned" } }), { status: 201 }));
+    const id = await new ApiDataProvider().createShipment({
+      origin: 2, destination: 4, vehicle: 1, device: 2, buyer: 5, driver: 7,
+      startsAt: "2026-11-17T12:00:00.000Z",
+      items: [{ fruit: 1, lot: "MG-1711-01", quantityKg: 4500 }],
+    });
+    expect(id).toBe("VG-12");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${BASE}/shipments`);
+    expect(JSON.parse(init.body)).toEqual({
+      origin: 2, destination: 4, vehicle: 1, device: 2, buyer: 5, driver: 7,
+      started_at: "2026-11-17T12:00:00.000Z",
+      items: [{ fruit: 1, lot: "MG-1711-01", quantity_kg: "4500.00" }],
+    });
+  });
+
+  it("sends the buyer confirmation as multipart with the photos", async () => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ data: { id: 1, condition: "damaged" } }), { status: 200 }));
+    const photo = new File([new Uint8Array([0xff, 0xd8, 0xff])], "caixa.jpg", { type: "image/jpeg" });
+    await new ApiDataProvider().confirmDelivery("VG-2", { condition: "damaged", notes: " 3 caixas amassadas ", photos: [photo, photo] });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${BASE}/shipments/2/confirm`);
+    const form = init.body as FormData;
+    expect(form.get("condition")).toBe("damaged");
+    expect(form.get("notes")).toBe("3 caixas amassadas");
+    expect(form.getAll("photos")).toHaveLength(2);
+    // The browser must set the multipart boundary itself.
+    expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
+  });
+
+  it("loads the driver's trips from /shipments/current", async () => {
+    routes["/shipments/current"] = { data: [{ ...shipment, driver: 7 }] };
+    const [trip] = await new ApiDataProvider().getMyTrips();
+    delete routes["/shipments/current"];
+    expect(trip).toMatchObject({ id: "VG-2", logisticsStatus: "in_transit", driverId: 7 });
+  });
+
+  it("has no driver trips on the backend without roles", async () => {
+    expect(await new ApiDataProvider().getMyTrips()).toEqual([]);
+  });
+
+  it("falls back to typing the id while the backend has no user list", async () => {
+    expect(await new ApiDataProvider().getPeople("buyer")).toBeNull();
+    routes["/auth/users"] = { data: [{ id: 5, name: "Comprador Demo", email: "comprador@example.com", role: "buyer" }] };
+    const people = await new ApiDataProvider().getPeople("buyer");
+    delete routes["/auth/users"];
+    expect(people).toEqual([{ id: 5, label: "Comprador Demo", detail: "comprador@example.com" }]);
+  });
+
   it("treats a trip the user cannot see (404) as not found", async () => {
     fetchMock.mockImplementation(async () => new Response(JSON.stringify({ detail: "Não encontrado." }), { status: 404 }));
     expect(await new ApiDataProvider().getShipmentById("VG-99")).toBeNull();

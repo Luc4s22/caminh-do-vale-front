@@ -46,7 +46,8 @@ async function send(url: string, init: RequestInit, token?: string): Promise<Res
       signal: controller.signal,
       headers: {
         Accept: "application/json",
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        // FormData sets its own multipart boundary.
+        ...(init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },
@@ -132,6 +133,10 @@ export async function postData<T>(path: string, payload?: unknown): Promise<T> {
     body: payload === undefined ? undefined : JSON.stringify(payload),
   });
   return body.data;
+}
+
+export async function postForm<T>(path: string, form: FormData): Promise<T> {
+  return (await request<{ data: T }>(path, { method: "POST", body: form })).data;
 }
 
 export async function getAllPages<T>(path: string, maxPages = 20): Promise<T[]> {

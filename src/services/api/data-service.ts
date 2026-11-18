@@ -10,6 +10,10 @@ import type {
   AlertFilters,
   AppNotification,
   FruitStorageProfile,
+  DeliveryConfirmation,
+  NewTrip,
+  TripFormOptions,
+  TripOption,
 } from "@/types";
 
 export interface DataService {
@@ -30,6 +34,16 @@ export interface DataService {
   finishShipment(id: string): Promise<LogisticsStatus>;
   /** Creates a new planned trip with the same route, vehicle, board and cargo; returns its id. */
   repeatShipment(id: string): Promise<string>;
+  /** Locations, trucks, boards and fruits the user can pick when creating a trip. */
+  getTripFormOptions(): Promise<TripFormOptions>;
+  /** Buyers or drivers to choose from; null while the backend has no user list (type the id instead). */
+  getPeople(role: "buyer" | "driver"): Promise<TripOption[] | null>;
+  /** Creates a planned trip with its cargo; returns its id. */
+  createShipment(trip: NewTrip): Promise<string>;
+  /** The buyer confirms receipt: "awaiting_confirmation" -> "delivered". */
+  confirmDelivery(id: string, confirmation: DeliveryConfirmation): Promise<void>;
+  /** The logged driver's planned, active and delivered trips. */
+  getMyTrips(): Promise<Shipment[]>;
   getFruitProfiles(): Promise<FruitStorageProfile[]>;
   getNotifications(): Promise<AppNotification[]>;
 }

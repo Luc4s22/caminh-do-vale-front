@@ -17,6 +17,7 @@ import {
   XCircle,
   Building2,
   WifiOff,
+  PackageCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +26,8 @@ import {
   useAlerts,
   useResolveAlert,
 } from "@/hooks/use-data-service";
-import { useCanHandleAlerts } from "@/hooks/use-session";
+import { useCanConfirmDelivery, useCanHandleAlerts } from "@/hooks/use-session";
+import { ConfirmDeliveryDialog } from "@/features/trips/confirm-delivery";
 import { ApiError } from "@/services/api/http";
 import { DeviceStatus, boardIsSilent } from "./components/device-status";
 import { useSimulatedRoutes } from "@/hooks/use-simulated-routes";
@@ -264,6 +266,8 @@ export default function ShipmentDetailPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   // "custom" = every reading of the trip, so finished trips opened from the history show their data.
   const [timeRange, setTimeRange] = useState<TimeRange>("custom");
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false);
+  const canConfirm = useCanConfirmDelivery();
 
   const { data: shipment, isLoading: shipmentLoading, error: shipmentError } = useShipment(id ?? "");
   const { data: readings, isLoading: readingsLoading } = useReadingHistory(
@@ -423,6 +427,26 @@ export default function ShipmentDetailPage() {
           <DeviceStatus device={shipment.device} className="mt-2" />
         </div>
       </div>
+
+      {shipment.logisticsStatus === "awaiting_confirmation" && (
+        <div className="flex flex-col gap-3 rounded-lg border border-[#E08A2E]/30 bg-[#FEF3E6] px-4 py-3 text-sm text-[#9A5B12] sm:flex-row sm:items-center sm:justify-between" role="status">
+          <span className="flex items-start gap-2">
+            <PackageCheck className="mt-0.5 h-4 w-4 shrink-0" />
+            {canConfirm
+              ? "A carga foi entregue. Confira como ela chegou e confirme o recebimento para concluir a viagem."
+              : "A carga foi entregue e aguarda o comprador confirmar o recebimento."}
+          </span>
+          {canConfirm && (
+            <Button className="shrink-0" onClick={() => setConfirmingDelivery(true)}>
+              <PackageCheck className="h-4 w-4" />
+              Confirmar recebimento
+            </Button>
+          )}
+        </div>
+      )}
+      {confirmingDelivery && (
+        <ConfirmDeliveryDialog shipment={shipment} onClose={() => setConfirmingDelivery(false)} />
+      )}
 
       {shipment.logisticsStatus === "in_transit" && boardIsSilent(shipment.device) && (
         <div className="flex items-start gap-2 rounded-lg border border-[#E08A2E]/30 bg-[#FEF3E6] px-4 py-2.5 text-sm text-[#9A5B12]" role="status">
