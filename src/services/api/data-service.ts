@@ -14,6 +14,7 @@ import type {
   NewTrip,
   TripFormOptions,
   TripOption,
+  ChatTurn,
 } from "@/types";
 
 export interface DataService {
@@ -44,6 +45,8 @@ export interface DataService {
   confirmDelivery(id: string, confirmation: DeliveryConfirmation): Promise<void>;
   /** The logged driver's planned, active and delivered trips. */
   getMyTrips(): Promise<Shipment[]>;
+  /** Asks the assistant (Gemini on the backend); returns its answer. */
+  askAssistant(message: string, options: { shipmentId?: string; history: ChatTurn[] }): Promise<string>;
   getFruitProfiles(): Promise<FruitStorageProfile[]>;
   getNotifications(): Promise<AppNotification[]>;
 }

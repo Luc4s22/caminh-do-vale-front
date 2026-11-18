@@ -7,6 +7,8 @@ import { MobileNav } from "./mobile-nav";
 import { useAlerts, useNotifications } from "@/hooks/use-data-service";
 import { useReadNotifications } from "@/hooks/use-read-notifications";
 import type { AppNotification } from "@/types";
+import { ChatWidget } from "@/features/assistant/chat-widget";
+import { useSession } from "@/hooks/use-session";
 
 const pageTitles: Record<string, string> = {
   "/": "Visão Geral",
@@ -34,6 +36,7 @@ const NO_NOTIFICATIONS: AppNotification[] = [];
 
 export function AppLayout() {
   const location = useLocation();
+  const userId = useSession()?.user.id;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState(() => new Date());
 
@@ -113,6 +116,9 @@ export function AppLayout() {
 
       {/* Mobile bottom nav */}
       <MobileNav alertCount={alertCount} />
+
+      {/* Assistant; keyed by user so one person's conversation never shows for the next. */}
+      <ChatWidget key={userId ?? "anon"} />
     </div>
   );
 }

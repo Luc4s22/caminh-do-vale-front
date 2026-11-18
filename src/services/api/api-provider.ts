@@ -8,6 +8,7 @@ import type {
   NewTrip,
   TripFormOptions,
   TripOption,
+  ChatTurn,
   EnvironmentalStatus,
   FruitStorageProfile,
   GeoPosition,
@@ -451,6 +452,17 @@ export class ApiDataProvider implements DataService {
       this.getLookups(),
     ]);
     return trips.map((s, i) => this.mapShipment(s, summaries[i], lookups));
+  }
+
+  async askAssistant(message: string, { shipmentId, history }: { shipmentId?: string; history: ChatTurn[] }): Promise<string> {
+    const shipment = shipmentId ? fromShipmentId(shipmentId) : null;
+    const reply = await postData<{ answer: string }>("/chat", {
+      message,
+      ...(shipment ? { shipment_id: shipment } : {}),
+      // The backend only uses the last 6 turns.
+      history: history.slice(-6),
+    });
+    return reply.answer;
   }
 
   private apiShipmentId(id: string): number {

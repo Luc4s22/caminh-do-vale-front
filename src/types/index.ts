@@ -118,6 +118,12 @@ export interface NewTrip {
   items: { fruit: number; lot: string; quantityKg: number }[];
 }
 
+/** One message of the assistant chat; "model" is the assistant's answer. */
+export interface ChatTurn {
+  role: "user" | "model";
+  text: string;
+}
+
 export interface MonitoringAlert {
   id: string;
   shipmentId: string;

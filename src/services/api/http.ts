@@ -13,11 +13,17 @@ const REQUEST_TIMEOUT_MS = 90_000;
 
 export class ApiError extends Error {
   readonly status: number;
+  /** Machine-readable reason some endpoints add, e.g. "assistant_quota_exceeded". */
+  readonly code?: string;
+  /** Seconds to wait, from the Retry-After header of a 429. */
+  readonly retryAfter?: number;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, extra: { code?: string; retryAfter?: number } = {}) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = extra.code;
+    this.retryAfter = extra.retryAfter;
   }
 }
 
@@ -119,7 +125,14 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   }
 
   const body = await parse(res);
-  if (!res.ok) throw new ApiError(errorMessage(body, res.status), res.status);
+  if (!res.ok) {
+    const code = (body as { code?: unknown } | null)?.code;
+    const retryAfter = Number(res.headers.get("Retry-After"));
+    throw new ApiError(errorMessage(body, res.status), res.status, {
+      code: typeof code === "string" ? code : undefined,
+      retryAfter: Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined,
+    });
+  }
   return body as T;
 }
 

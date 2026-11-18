@@ -190,12 +190,12 @@ export function ConfirmDeliveryDialog({
           </p>
         )}
 
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-          {missing && condition && <p className="text-xs text-[#9A5B12] sm:mr-auto">{missing}</p>}
+        {missing && condition && <p className="mt-4 text-xs text-[#9A5B12]">{missing}</p>}
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={busy || !!missing}>
+          <Button onClick={submit} disabled={busy || !!missing} className="whitespace-nowrap">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {busy && photos.length > 0 ? "Enviando fotos…" : "Confirmar recebimento"}
           </Button>
