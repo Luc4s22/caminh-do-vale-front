@@ -119,3 +119,23 @@ h3 {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-secondary);
 }
+
+/* Assistant: yellow glow on the floating button until it is first opened, and the panel's entrance. */
+@keyframes assistant-glow {
+  0%, 100% { box-shadow: 0 12px 28px -10px rgba(22, 100, 58, 0.65), 0 0 0 0 rgba(242, 201, 76, 0.55); }
+  50% { box-shadow: 0 12px 28px -10px rgba(22, 100, 58, 0.65), 0 0 0 12px rgba(242, 201, 76, 0); }
+}
+@keyframes assistant-pop {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes assistant-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.assistant-glow { animation: assistant-glow 2.4s ease-in-out infinite; }
+.assistant-pop { animation: assistant-pop 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; transform-origin: bottom right; }
+.assistant-in { animation: assistant-in 0.25s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .assistant-glow, .assistant-pop, .assistant-in { animation: none; }
+}

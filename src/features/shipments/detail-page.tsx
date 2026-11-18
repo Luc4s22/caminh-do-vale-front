@@ -18,7 +18,10 @@ import {
   Building2,
   WifiOff,
   PackageCheck,
+  Sparkles,
+  MessageCircle,
 } from "lucide-react";
+import { openAssistant } from "@/features/assistant/open-assistant";
 import { cn } from "@/lib/utils";
 import {
   useShipment,
@@ -447,6 +450,42 @@ export default function ShipmentDetailPage() {
       {confirmingDelivery && (
         <ConfirmDeliveryDialog shipment={shipment} onClose={() => setConfirmingDelivery(false)} />
       )}
+
+      <div
+        className="relative flex flex-col gap-3 overflow-hidden rounded-2xl px-5 py-4 text-white shadow-md sm:flex-row sm:items-center sm:justify-between"
+        style={{ background: "linear-gradient(120deg, #1a7a44 0%, #1F8A4D 45%, #16643A 100%)" }}
+      >
+        <div
+          className="pointer-events-none absolute -top-12 -left-6 h-36 w-36 rounded-full opacity-25"
+          style={{ background: "radial-gradient(circle, #F2C94C 0%, transparent 70%)" }}
+        />
+        <div className="relative flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F2C94C] text-[#123A24]">
+            <Sparkles className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-semibold">Dúvidas sobre a {shipment.id}?</p>
+            <p className="text-sm text-[#D7EEDD]">O assistente analisa as leituras e os alertas desta carga para você.</p>
+          </div>
+        </div>
+        <div className="relative flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => openAssistant(`Como está a carga ${shipment.id} agora?`)}
+            className="rounded-xl bg-white/15 px-3 py-2 text-sm font-medium hover:bg-white/25"
+          >
+            Como está agora?
+          </button>
+          <button
+            type="button"
+            onClick={() => openAssistant()}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#F2C94C] px-3 py-2 text-sm font-semibold text-[#123A24] hover:bg-[#E8BB2E]"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Perguntar ao assistente
+          </button>
+        </div>
+      </div>
 
       {shipment.logisticsStatus === "in_transit" && boardIsSilent(shipment.device) && (
         <div className="flex items-start gap-2 rounded-lg border border-[#E08A2E]/30 bg-[#FEF3E6] px-4 py-2.5 text-sm text-[#9A5B12]" role="status">
