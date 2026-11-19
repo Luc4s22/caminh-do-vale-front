@@ -74,7 +74,7 @@ function RichText({ text }: { text: string }) {
 function Avatar({ size = "h-7 w-7" }: { size?: string }) {
   return (
     <span className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-[#E6F4EA]", size)}>
-      <img src={logoIcon} alt="" className="h-[78%] w-[78%] object-contain" />
+      <img src={logoIcon} alt="" className="h-[70%] w-[70%] object-contain" />
     </span>
   );
 }
