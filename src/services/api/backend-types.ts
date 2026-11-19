@@ -41,6 +41,8 @@ export interface ApiLocation {
   name: string;
   type: "farm" | "distribution_center" | "warehouse";
   address: string;
+  /** Who registered it; null = shared, registered by the platform. */
+  owner?: number | null;
   is_active: boolean;
 }
 
@@ -48,6 +50,7 @@ export interface ApiVehicle {
   id: number;
   plate: string;
   model: string;
+  owner?: number | null;
   is_active: boolean;
 }
 
@@ -172,4 +175,28 @@ export interface ApiAlert {
   acknowledged_by_name: string | null;
   acknowledged_at: string | null;
   resolved_at: string | null;
+}
+
+/** Row of the "Usuários" screen (GET /auth/users without role, platform only). */
+export interface ApiManagedUser {
+  id: number;
+  name: string;
+  email: string;
+  role: ApiUser["role"];
+  is_active: boolean;
+  /** false = invite not accepted yet. */
+  has_password: boolean;
+  has_2fa: boolean;
+  last_login: string | null;
+  date_joined: string;
+}
+
+export interface ApiInviteResult {
+  invite_sent: boolean;
+  /** Filled only when the e-mail did not go out: the platform sends this link by another channel. */
+  password_setup_link: string | null;
+}
+
+export interface ApiCreatedUser extends ApiInviteResult {
+  user: ApiManagedUser;
 }

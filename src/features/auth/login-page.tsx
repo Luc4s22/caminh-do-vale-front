@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { ArrowLeft, KeyRound, Loader2, LogIn, ShieldCheck, Smartphone } from "lucide-react";
 import { Button, Input } from "@/components/ui";
 import {
@@ -15,7 +15,7 @@ import type { Session } from "@/services/api/session";
 import type { ApiMfaSetup } from "@/services/api/backend-types";
 import { InstallAppButton } from "@/components/layout/install-app-button";
 import { CodeInput, CopyButton, RecoveryCodesPanel } from "./two-factor";
-import logo from "@/assets/brand/logo-horizontal-yellow-v.png";
+import { AuthError, AuthShell } from "./auth-shell";
 
 type ServerState = "waking" | "ready" | "unreachable";
 
@@ -48,14 +48,6 @@ type Step =
   | { kind: "codes"; session: Session; codes: string[] };
 
 const isTouch = typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
-
-function ErrorBox({ children }: { children: ReactNode }) {
-  return (
-    <p className="rounded-lg bg-[#FCE8E6] px-3 py-2 text-sm text-[#B03A3A]" role="alert">
-      {children}
-    </p>
-  );
-}
 
 export default function LoginPage() {
   const session = useSession();
@@ -166,27 +158,7 @@ export default function LoginPage() {
   const [title, subtitle] = titles[step.kind];
 
   return (
-    <div
-      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10"
-      style={{ background: "linear-gradient(145deg, #1a7a44 0%, #1F8A4D 30%, #16643A 70%, #124e2e 100%)" }}
-    >
-      <div
-        className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full opacity-10"
-        style={{ background: "radial-gradient(circle, #BFE3C8 0%, transparent 70%)" }}
-      />
-      <div
-        className="pointer-events-none absolute top-1/4 left-1/4 h-64 w-64 rounded-full opacity-10"
-        style={{ background: "radial-gradient(circle, #F2C94C 0%, transparent 70%)" }}
-      />
-      <svg className="pointer-events-none absolute bottom-0 left-0 w-full" viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true">
-        <path fill="rgba(47, 168, 102, 0.18)" d="M0,110 C240,70 480,150 720,112 C960,74 1200,96 1440,84 L1440,200 L0,200Z" />
-        <path fill="rgba(191, 227, 200, 0.08)" d="M0,150 C300,126 600,176 900,150 C1140,130 1300,142 1440,140 L1440,200 L0,200Z" />
-      </svg>
-
-      <div className="relative w-full max-w-md">
-        <div className="rounded-2xl bg-white p-8 shadow-2xl">
-          <img src={logo} alt="Caminho do Vale" className="mx-auto h-20 w-auto object-contain" />
-
+    <AuthShell>
           <h1 className="mt-6 text-center text-xl font-bold text-[#123A24]">{title}</h1>
           <p className="mt-1 text-center text-sm text-[#5B7264]">
             {subtitle || (
@@ -200,20 +172,22 @@ export default function LoginPage() {
             <form onSubmit={submitCredentials} className="mt-6 space-y-4" noValidate>
               <Input id="email" label="E-mail" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
               <Input id="password" label="Senha" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              {error && <ErrorBox>{error}</ErrorBox>}
+              {error && <AuthError>{error}</AuthError>}
               <Button type="submit" size="lg" className="w-full" disabled={submitting || !email || !password}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
                 {submitting ? "Entrando…" : "Entrar"}
               </Button>
+              <Link to="/redefinir-senha" className="block text-center text-sm font-medium text-[#1A7A44] hover:underline">
+                Esqueci minha senha
+              </Link>
             </form>
           )}
 
           {step.kind === "setup" && (
             <div className="mt-6 space-y-4">
               <ol className="space-y-1 text-sm text-[#123A24]">
-                <li>1. Instale um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou Authy).</li>
-                <li>2. No aplicativo, escaneie o QR code abaixo.</li>
-                <li>3. Digite o código de 6 dígitos que aparecer.</li>
+                <li>1. Instale um app autenticador (Google Authenticator, Microsoft Authenticator...) e leia o QR Code.</li>
+                <li>2. Digite o código de 6 dígitos que aparecer no app.</li>
               </ol>
               {step.setup ? (
                 <>
@@ -235,14 +209,14 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <CodeInput value={code} onChange={setCode} onComplete={submitActivation} disabled={submitting} />
-                  {error && <ErrorBox>{error}</ErrorBox>}
+                  {error && <AuthError>{error}</AuthError>}
                   <Button size="lg" className="w-full" disabled={submitting || code.length !== 6} onClick={() => submitActivation(code)}>
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                     Ativar e entrar
                   </Button>
                 </>
               ) : error ? (
-                <ErrorBox>{error}</ErrorBox>
+                <AuthError>{error}</AuthError>
               ) : (
                 <p className="flex items-center justify-center gap-2 py-10 text-sm text-[#5B7264]">
                   <Loader2 className="h-4 w-4 animate-spin" /> Gerando o QR code…
@@ -268,7 +242,7 @@ export default function LoginPage() {
               ) : (
                 <CodeInput value={code} onChange={setCode} onComplete={submitVerification} disabled={submitting} />
               )}
-              {error && <ErrorBox>{error}</ErrorBox>}
+              {error && <AuthError>{error}</AuthError>}
               <Button
                 size="lg"
                 className="w-full"
@@ -324,12 +298,6 @@ export default function LoginPage() {
               </div>
             </>
           )}
-        </div>
-
-        <p className="mt-6 text-center text-xs uppercase tracking-wider text-[#BFE3C8]/60">
-          Vale do São Francisco &bull; Petrolina &bull; Juazeiro
-        </p>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

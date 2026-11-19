@@ -249,7 +249,7 @@ export default function TripsPage() {
           </Section>
 
           {awaiting.length > 0 && (
-            <Section title="Aguardando confirmação do comprador" count={awaiting.length}>
+            <Section title="Entregue, aguardando confirmação" count={awaiting.length}>
               {awaiting.map((s) => (
                 <TripRow
                   key={s.id}

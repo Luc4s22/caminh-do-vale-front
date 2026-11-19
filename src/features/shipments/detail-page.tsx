@@ -552,7 +552,7 @@ export default function ShipmentDetailPage() {
         />
         <InfoItem
           icon={Building2}
-          label="Transportadora"
+          label="Transportadora (fictícia)"
           value={shipment.carrier?.name ?? "—"}
         />
         <InfoItem

@@ -18,7 +18,7 @@ import { StatusIndicator } from "@/components/ui/status-indicator";
 import { InstallAppButton } from "./install-app-button";
 import type { AppNotification } from "@/types";
 import { logout, useSession } from "@/hooks/use-session";
-import type { UserRole } from "@/services/api/session";
+import { roleLabels } from "@/utils/roles";
 import { RegenerateRecoveryCodesDialog } from "@/features/auth/two-factor";
 
 interface HeaderProps {
@@ -37,14 +37,6 @@ const notificationIcon: Record<string, typeof AlertTriangle> = {
   info: InfoIcon,
 };
 
-const roleLabels: Record<UserRole, string> = {
-  admin: "Administrador",
-  seller: "Vendedor",
-  buyer: "Comprador",
-  driver: "Motorista",
-  operator: "Operador",
-  viewer: "Visualizador",
-};
 
 const notificationColor: Record<string, string> = {
   warning: "text-[#E08A2E]",

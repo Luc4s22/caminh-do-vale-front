@@ -148,6 +148,10 @@ export async function postData<T>(path: string, payload?: unknown): Promise<T> {
   return body.data;
 }
 
+export async function patchData<T>(path: string, payload: unknown): Promise<T> {
+  return (await request<{ data: T }>(path, { method: "PATCH", body: JSON.stringify(payload) })).data;
+}
+
 export async function postForm<T>(path: string, form: FormData): Promise<T> {
   return (await request<{ data: T }>(path, { method: "POST", body: form })).data;
 }

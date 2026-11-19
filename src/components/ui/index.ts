@@ -9,3 +9,4 @@ export { EmptyState } from "./empty-state";
 export { StatusIndicator } from "./status-indicator";
 export { MetricCard } from "./metric-card";
 export { TimeRangeSelector } from "./time-range-selector";
+export { Dialog, FormError } from "./dialog";

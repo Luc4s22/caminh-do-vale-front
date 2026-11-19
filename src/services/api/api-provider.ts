@@ -471,6 +471,12 @@ export class ApiDataProvider implements DataService {
     return apiId;
   }
 
+  /** After a location or vehicle is registered or edited, so trip screens and forms see it right away. */
+  invalidateLookups(): void {
+    this.cache.delete("lookups");
+    this.cache.delete("shipments");
+  }
+
   private invalidate(): void {
     this.cache.delete("alerts");
     this.cache.delete("shipments");

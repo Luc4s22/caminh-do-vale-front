@@ -11,8 +11,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Skeleton, EmptyState, Tabs, TabPanel } from "@/components/ui";
+import { useSearchParams } from "react-router-dom";
 import { useFruitProfiles } from "@/hooks/use-data-service";
-import { API_BASE_URL } from "@/services/api/http";
+import { useCanPlanTrips, useSession } from "@/hooks/use-session";
+import { UsersTab } from "./users-tab";
+import { RegistrationsTab } from "./registrations-tab";
 
 function Toggle({
   checked,
@@ -301,19 +304,6 @@ function SystemTab() {
               <p className="text-xs text-[#5B7264] mb-1">Versão do aplicativo</p>
               <p className="text-sm font-semibold text-[#123A24]">0.1.0</p>
             </div>
-            <div className="rounded-lg bg-[#F4FAF5] p-4">
-              <p className="text-xs text-[#5B7264] mb-1">Ambiente</p>
-              <p className="text-sm font-semibold text-[#123A24]">
-                {import.meta.env.MODE === "production" ? "Produção" : "Desenvolvimento"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 rounded-lg bg-[#427DA5]/10 p-3">
-            <Info className="h-4 w-4 text-[#427DA5] shrink-0 mt-0.5" />
-            <p className="text-xs text-[#427DA5]">
-              Conectado a <code className="font-mono bg-[#427DA5]/10 px-1 rounded">{API_BASE_URL}</code>.
-            </p>
           </div>
         </CardContent>
       </Card>
@@ -322,20 +312,31 @@ function SystemTab() {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("profiles");
+  const isAdmin = useSession()?.user.role === "admin";
+  const canRegister = useCanPlanTrips();
+  // ?aba=usuarios opens a tab directly.
+  const [params, setParams] = useSearchParams();
 
   const tabs = [
     { id: "profiles", label: "Perfis de Frutas" },
+    ...(canRegister ? [{ id: "registrations", label: "Locais e Veículos" }] : []),
+    ...(isAdmin ? [{ id: "users", label: "Usuários" }] : []),
     { id: "notifications", label: "Notificações" },
     { id: "system", label: "Sistema" },
   ];
+  const aliases: Record<string, string> = { usuarios: "users", cadastros: "registrations" };
+  const requested = params.get("aba") ?? "";
+  const activeTab = tabs.some((t) => t.id === (aliases[requested] ?? requested)) ? aliases[requested] ?? requested : "profiles";
+  const setActiveTab = (id: string) => setParams(id === "profiles" ? {} : { aba: id }, { replace: true });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-[#123A24]">Configurações</h1>
         <p className="text-sm text-[#5B7264] mt-1">
-          Gerencie os perfis de frutas, notificações e preferências do sistema
+          {isAdmin
+            ? "Gerencie usuários, cadastros, perfis de frutas e notificações"
+            : "Gerencie os perfis de frutas, notificações e preferências do sistema"}
         </p>
       </div>
 
@@ -344,6 +345,18 @@ export default function SettingsPage() {
       <TabPanel id="profiles" activeTab={activeTab}>
         <FruitProfilesTab />
       </TabPanel>
+
+      {canRegister && (
+        <TabPanel id="registrations" activeTab={activeTab}>
+          <RegistrationsTab />
+        </TabPanel>
+      )}
+
+      {isAdmin && (
+        <TabPanel id="users" activeTab={activeTab}>
+          <UsersTab />
+        </TabPanel>
+      )}
 
       <TabPanel id="notifications" activeTab={activeTab}>
         <NotificationsTab />

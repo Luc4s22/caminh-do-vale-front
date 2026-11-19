@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout';
 import { useSession } from '@/hooks/use-session';
 
 const Login = lazy(() => import('@/features/auth/login-page'));
+const PasswordPage = lazy(() => import('@/features/auth/password-page'));
 
 function RequireAuth() {
   const session = useSession();
@@ -60,6 +61,11 @@ export function AppRouter() {
       <Route
         path="login"
         element={<Suspense fallback={null}><Login /></Suspense>}
+      />
+      {/* Public: the invite link and "Esqueci minha senha" land here (PASSWORD_RESET_URL on the backend). */}
+      <Route
+        path="redefinir-senha"
+        element={<Suspense fallback={null}><PasswordPage /></Suspense>}
       />
       <Route element={<RequireAuth />}>
       <Route element={<AppLayout />}>

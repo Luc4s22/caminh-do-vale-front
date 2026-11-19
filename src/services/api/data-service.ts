@@ -47,6 +47,8 @@ export interface DataService {
   getMyTrips(): Promise<Shipment[]>;
   /** Asks the assistant (Gemini on the backend); returns its answer. */
   askAssistant(message: string, options: { shipmentId?: string; history: ChatTurn[] }): Promise<string>;
+  /** Drops the cached locations, vehicles and boards (after editing a registration). */
+  invalidateLookups(): void;
   getFruitProfiles(): Promise<FruitStorageProfile[]>;
   getNotifications(): Promise<AppNotification[]>;
 }

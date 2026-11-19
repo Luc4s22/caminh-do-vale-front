@@ -23,12 +23,15 @@ export default function CompaniesPage() {
         <p className="mt-1 text-sm text-[#5B7264]">Transportadoras que prestam os serviços de transporte</p>
       </div>
 
-      <div className="flex items-start gap-2 rounded-lg bg-[#427DA5]/10 p-3">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#427DA5]" />
-        <p className="text-xs text-[#427DA5]">
-          Estas empresas são fictícias. O back ainda não tem cadastro de empresas, então cada veículo que vem dele é
-          ligado a uma delas pela placa.
-        </p>
+      <div className="flex items-start gap-3 rounded-xl border border-[#E08A2E]/40 bg-[#FEF3E6] px-4 py-3" role="note">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#9A5B12]" />
+        <div className="text-sm text-[#9A5B12]">
+          <p className="font-semibold">Dados fictícios, só para demonstração</p>
+          <p className="mt-0.5">
+            Estas transportadoras, e-mails e cidades não existem. O sistema ainda não tem cadastro de empresas, então cada
+            veículo real é ligado a uma delas pela placa, apenas para ilustrar a tela.
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -44,7 +47,10 @@ export default function CompaniesPage() {
                   <Building2 className="h-5 w-5 text-[#1A7A44]" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-semibold text-[#123A24]">{company.name}</h2>
+                  <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-[#123A24]">
+                    {company.name}
+                    <Badge variant="warning">Fictícia</Badge>
+                  </h2>
                   <p className="text-sm text-[#5B7264]">{company.service}</p>
                 </div>
               </div>
