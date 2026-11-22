@@ -4,62 +4,46 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches:
-      - principal
+      - main
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - principal
+      - main
   workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write
 
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    name: Construir e implantar
+    name: Build and Deploy Job
 
     steps:
-      - name: Baixar código
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
 
-      - name: Instalar cliente OIDC
-        run: npm install @actions/core@1.6.0 @actions/http-client
-
-      - name: Obter Token de ID
-        uses: actions/github-script@v7
-        id: idtoken
-        with:
-          script: |
-            const core = require('@actions/core')
-            return await core.getIDToken()
-          result-encoding: string
-
-      - name: Construir e implantar
+      - name: Build and deploy frontend
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         env:
-          VITE_API_BASE_URL: https://app-caminho-vale-backend-novo-btawcgdkbzayhvc5.brazilsouth-01.azurewebsites.net/api/v1
+          VITE_API_BASE_URL: "https://app-caminho-vale-backend-novo-btawcgdkbzayhvc5.brazilsouth-01.azurewebsites.net/api/v1"
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_DESERT_0FC71AA10 }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/"
           api_location: ""
           output_location: "dist"
-          github_id_token: ${{ steps.idtoken.outputs.result }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    name: Fechar tarefa de Pull Request
+    name: Close Pull Request Job
 
     steps:
-      - name: Fechar Pull Request
+      - name: Close Pull Request
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_DESERT_0FC71AA10 }}
